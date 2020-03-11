@@ -41,6 +41,16 @@ const db_BindOpenId = (param) => {
     })
 }
 /**
+ * 插入商户信息
+ * @param {*} param 
+ */
+const db_insertBusiness = (param) =>{
+    //先插入商户表，在插入用户表
+    let sql =  `insert into business 
+            (legal,busLicence,storePicture,introduce,createTime) 
+            values()`
+}
+/**
  * 通过openid登录小程序
  * @param {*} param 
  */

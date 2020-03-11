@@ -9,9 +9,12 @@ const getUniCodeUrl = "https://api.weixin.qq.com/wxa/getwxacodeunlimit"
 
 const getOpenIdUrl = "https://api.weixin.qq.com/sns/jscode2session";
 
+const baseUrl = 'http://localhost:3000'
+
 module.exports = {
     wxconfig,
     getAccessTokenUrl,
     getUniCodeUrl,
-    getOpenIdUrl
+    getOpenIdUrl,
+    baseUrl
 }
