@@ -9,7 +9,7 @@ var billRouter = require('./routes/bill');
 var userRouter = require('./routes/user')
 var manRouter = require('./routes/manager')
 var scanRouter = require('./routes/scan')
-var testRouter = require('./routes/test')
+var webRouter = require('./routes/web')
 var wxRouter = require('./routes/wx')
 
 const expressJwt = require('express-jwt');
@@ -83,7 +83,7 @@ app.use('/user', userRouter);
 app.use('/bill', billRouter);
 app.use('/manager', manRouter);
 app.use('/scan', scanRouter);
-app.use('/test', testRouter);
+app.use('/web', webRouter);
 app.use('/wx', wxRouter);
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

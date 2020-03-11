@@ -2,6 +2,7 @@
 const { exec } = require('../db/mysql')
 const { getYearMonth, transformStrNumber, createRandom, getCodeCheckNum } = require('../utils/cryp')
 
+const time = new Date().toLocaleString();
 /*
 * 生成激活码
 * 参数 type number 
@@ -32,8 +33,6 @@ const db_insertActCode = (param) => {
         return rows
     })
 }
-
-
 /**
  * 创建防伪码
  * @param {} param 
@@ -49,11 +48,11 @@ const db_insertAntiCode = (param) => {
         return rows
     })
 }
-const db_AntiTotal = (param) =>{
-    let sql =  `select count(sn) as total from antiCode where 1=1 ` 
-    if(param.state != 0) {
+const db_AntiTotal = (param) => {
+    let sql = `select count(sn) as total from antiCode where 1=1 `
+    if (param.state != 0) {
         sql += `and state=${param.state}`
-    }    
+    }
     return exec(sql).then(rows => {
         return rows[0].total
     })
@@ -74,15 +73,44 @@ const db_insertActAnti = (param) => {
     })
 }
 /**
+ * 创建接收码
+ * @param {receivesn} param 
+ */
+const db_insertReceive = (param) => {
+    let sql = "insert into receivecode " +
+        "(sn,createTime)" +
+        "values ( '" +
+        param.sn + "','" +
+        new Date().toLocaleString() + "')"
+    return exec(sql).then(rows => {
+        return rows
+    })
+}
+/**
+ * 绑定接收码和激活码
+ * @param {receiveSn} param 
+ * @param {actSn} param 
+ */
+const db_insertReceiveAct = (param) => {
+    let sql = `insert into receive_act (receiveSn,actSn,createTime) 
+    values 
+    ('${param.receiveSn}','${param.actSn}','${time}')`;
+
+    return exec(sql).then(rows => {
+        return rows
+    })
+}
+
+/**
  * 根据条件查询防伪码
  * @param {*} param 
  */
 const db_selectAntiList = (param) => {
     let n = (param.currentPage - 1) * 10;
     let sql = `select * from antiCode `
-    if(param.state != 0) {
+    if (param.state != 0) {
         sql += ` where state=${param.state} `
-    }  
+    }
     sql += `order by sn desc limit ${n},${param.pageSize}`;
     return exec(sql).then(rows => {
         return rows
@@ -138,5 +166,7 @@ module.exports = {
     db_insertAntiCode,
     db_insertActAnti,
     db_selectAntiList,
-    db_AntiTotal
+    db_AntiTotal,
+    db_insertReceive,
+    db_insertReceiveAct
 }

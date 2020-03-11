@@ -2,10 +2,10 @@ var express = require('express');
 var router = express.Router();
 var request = require('request')
 const { getYearMonth, transformStrNumber, createRandom, createRandomNumber, getCodeCheckNum } = require('../utils/cryp')
-const { createAntiCode, getLastSn, createCipherText, createCode, db_AntiTotal, db_insertActAnti, db_insertActCode, db_selectAntiList, db_insertAntiCode } = require('../controller/code')
+const { createAntiCode, getLastSn, createCipherText, db_insertReceive,createCode, db_AntiTotal, db_insertActAnti, db_insertActCode, db_selectAntiList, db_insertAntiCode } = require('../controller/code')
 const { db_insertRecord, updateAntiState } = require('../controller/record')
 const { SuccessModel, ErrorModel } = require('../model/resModel')
-const { getAccessToken, getWxacode } = require('../controller/wxapi')
+const { getAccessToken, getWxacode, db_updateBusState } = require('../controller/wxapi')
 var fs = require('fs');
 router.get('/test', function (req, res, next) {
 
@@ -34,10 +34,10 @@ router.get('/test', function (req, res, next) {
     // createAntiCode(1);
     // console.log(code);
 })
-
+/**
+ * 创建激活码
+ */
 router.get('/createActCode', function (req, res, next) {
-    let antis = "1202010000001,1202010000003"; //始 末
-
     createCode('actCode').then(actCode => {
         let data = {}
         data.sn = actCode
@@ -49,17 +49,11 @@ router.get('/createActCode', function (req, res, next) {
 
         db_insertActCode(data).then(result => {
             console.log(result);
-            let param = {}
-            param.actSn = actCode;
-            for (let i = antis.split(',')[0]; i <= antis.split(',')[1]; i++) {
-                param.antiSn = i;
-                db_insertActAnti(param).then(r => {
-                })
+            if (result.affectedRows > 0) {
+                return res.json(new SuccessModel(result));
+            } else {
+                return res.json(new ErrorModel())
             }
-
-            return res.json(new SuccessModel());
-
-
         }).catch(err => {
             return res.json(new ErrorModel(err))
         })
@@ -67,7 +61,14 @@ router.get('/createActCode', function (req, res, next) {
     })
 
 })
-
+router.post('/createReceiveCode',function(req,res,next){
+    createCode('receivecode').then(data=>{
+        
+        db_insertReceive({sn:data}).then(result=>{
+            return res.json(new SuccessModel(result));
+        })
+    })
+})
 /**
  * 新增
  * @param {*} param 
@@ -99,9 +100,9 @@ const func_updateRecord = (data, res) => {
  */
 router.post('/sendPrintRecord', function (req, res, next) {
     let param = {
-        selects:req.body.selects,
-        state:req.body.state,
-        userId:req.body.userId,
+        selects: req.body.selects,
+        state: req.body.state,
+        userId: req.body.userId,
     }
     func_updateRecord(param, res);
 })
@@ -111,9 +112,9 @@ router.post('/sendPrintRecord', function (req, res, next) {
  */
 router.post('/receivedPrintRecord', function (req, res, next) {
     let param = {
-        selects:req.body.selects,
-        state:req.body.state,
-        userId:req.body.userId,
+        selects: req.body.selects,
+        state: req.body.state,
+        userId: req.body.userId,
     }
     func_updateRecord(param, res);
 })
@@ -141,6 +142,15 @@ const fun_createAnti = (data, res) => {
         })
     })
 }
+/**
+ * 更改商户的审核状态
+ */
+router.post('/updateBusState', function (req, res, next) {
+    db_updateBusState(req.body).then(data => {
+        return res.json(new SuccessModel(data))
+    })
+});
+
 
 var lastSn = '';
 var length = 0 //总数量

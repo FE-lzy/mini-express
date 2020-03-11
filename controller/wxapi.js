@@ -44,11 +44,34 @@ const db_BindOpenId = (param) => {
  * 插入商户信息
  * @param {*} param 
  */
-const db_insertBusiness = (param) =>{
+const db_insertBusiness = (param) => {
+    console.log('参数 ', param);
     //先插入商户表，在插入用户表
-    let sql =  `insert into business 
-            (legal,busLicence,storePicture,introduce,createTime) 
-            values()`
+    let sql = `insert into business 
+            (userId,legal,busLicence,storePicture,introduce,phone,createTime) 
+            values (${param.userId},'${param.legal}','${param.busLicence}',
+            '${param.storePicture}',
+            '${param.introduce}','${param.phone}','${time}')`
+    return exec(sql).then(rows => {
+        return rows
+    })
+}
+/**
+ * 生成user
+ * @param {*} param 
+ */
+const db_insertUser = (param) => {
+    let sql = `insert into user (username,password,role,createTime) values 
+        ('${param.username}','${param.password}',${param.role},'${time}') `
+    return exec(sql).then(rows => {
+        return rows
+    })
+}
+const db_updateBusState = (param) => {
+    let sql = `update business set actived=${param.actived} where id=${param.id}`
+    return exec(sql).then(rows => {
+        return rows
+    })
 }
 /**
  * 通过openid登录小程序
@@ -112,5 +135,8 @@ module.exports = {
     getWxOpenidByCode,
     db_UserLoginByAccount,
     db_UserLoginByOpenid,
-    db_BindOpenId
+    db_BindOpenId,
+    db_insertUser,
+    db_insertBusiness,
+    db_updateBusState
 }
