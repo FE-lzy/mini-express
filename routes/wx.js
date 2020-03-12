@@ -10,7 +10,7 @@ const { db_insertActAnti, db_insertReceiveAct } = require('../controller/code')
  * @param {code} param 
  */
 router.post('/wxOpenid', function (req, res, next) {
-    getWxOpenidByCode({ code: '021JiO1E0l7m6i2a925E0uMR1E0JiO1a' }).then(result => {
+    getWxOpenidByCode(req.body).then(result => {
         console.log(result.text, JSON.parse(result.text).errcode);
 
         if (JSON.parse(result.text).errcode == undefined) {
@@ -48,7 +48,11 @@ router.post('/wxUserLogin', function (req, res, next) {
 router.post('/wxUserLoginByOpenid', function (req, res, next) {
     db_UserLoginByOpenid(req.body).then(result => {
         console.log(result);
-        return res.json(new SuccessModel(result))
+        if (result.length > 0) {
+            return res.json(new SuccessModel(result[0]))
+        } else {
+            return res.json(new ErrorModel(result))
+        }
     })
 })
 

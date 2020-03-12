@@ -9,11 +9,12 @@ const time = new Date().toLocaleString();
  * @param {*} param 
  */
 const getWxOpenidByCode = (param) => {
+    console.log(param);
     let url = getOpenIdUrl + "?appid=" + wxconfig.appid + "&secret=" + wxconfig.appscret
         + "&js_code=" + param.code + "&grant_type=authorization_code";
     return new Promise(function (reslove, reject) {
         superagent.get(url).then(res => {
-            console.log(res);
+            // console.log(res);
             reslove(res)
         }).catch(err => {
             reject(err)
