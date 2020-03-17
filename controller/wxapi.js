@@ -5,6 +5,25 @@ const superagent = require('superagent');
 const { exec } = require('../db/mysql')
 const time = new Date().toLocaleString();
 /**
+ * 获取绑定关系
+ * @param {type,sn} param 
+ */
+const getBindInfo = (param) => {
+    let sql
+    if (param.type == 2) {
+        sql = `select * from act_anti where actSn = '${param.sn}'`
+    } else if (param.type == 3) {
+        sql = `select * from receive_act where receiveSn = '${param.sn}'`
+    }
+
+    return exec(sql).then(rows => {
+        return rows
+    })
+}
+
+
+
+/**
  * 根据code获取openid
  * @param {*} param 
  */
@@ -36,6 +55,8 @@ const db_UserLoginByAccount = (param) => {
  * @param {*} param 
  */
 const db_BindOpenId = (param) => {
+
+    const time = new Date().toLocaleString();
     let sql = `update user set openid = '${param.openid}',loginTime='${time}' where username='${param.username}'`;
     return exec(sql).then(rows => {
         return rows
@@ -47,6 +68,8 @@ const db_BindOpenId = (param) => {
  */
 const db_insertBusiness = (param) => {
     console.log('参数 ', param);
+
+    const time = new Date().toLocaleString();
     //先插入商户表，在插入用户表
     let sql = `insert into business 
             (userId,legal,busLicence,storePicture,introduce,phone,createTime) 
@@ -62,6 +85,7 @@ const db_insertBusiness = (param) => {
  * @param {*} param 
  */
 const db_insertUser = (param) => {
+    const time = new Date().toLocaleString();
     let sql = `insert into user (username,password,role,createTime) values 
         ('${param.username}','${param.password}',${param.role},'${time}') `
     return exec(sql).then(rows => {
@@ -89,7 +113,6 @@ const getAccessToken = () => {
         fs.readFile('./utils/wx_access_token.json', (err, data) => {
             console.log(data);
             if (err) { reject(err) }
-            if (err) reject(err);
             if (data && JSON.parse(data.toString()) && JSON.parse(data.toString()).expires_time > (new Date()).getTime()) {
                 console.log('从文件中获取的token');
                 reslove(JSON.parse(data.toString()).access_token);
@@ -118,14 +141,46 @@ const getWxacode = (scene) => {
     //请求参数
     return new Promise(function (reslove, reject) {
         getAccessToken().then(token => {
+            console.log('token', token);
             let url = getUniCodeUrl + '?access_token=' + token;
-            console.log();
-            let param = { scene: scene };
-
-            superagent.post(url).send(JSON.stringify(param)).end((err, result) => {
-                if (err) { reject(err); }
-                reslove(result.body)
+            let param = { scene: '1234567897877dsfjskdfh' }
+            superagent.post(url).send(JSON.stringify(param)).timeout(50000).end((err, result) => {
+                console.log(err);
+                if (err) {
+                    reject(err);
+                } else {
+                    reslove(result.body)
+                }
             })
+
+            // superagent.post('/api/pet')
+            //     .send({ scene: 'Manny' })
+            //     .set('Accept', 'application/json')
+            //     .then(res => {
+            //         alert('yay got ' + JSON.stringify(res.body));
+            //     });
+            // superagent.post(url)
+            //     .set('Content-Type', 'application/json')
+            //     .send(JSON.stringify(param))
+            //     .then(res => {
+            //         console.log('sssss ', res);
+            //         reslove(res)
+            //     })
+
+            // request({
+            //     url: url,
+            //     method: "POST",
+            //     body: JSON.stringify(param)
+            // }, function (error, response, body) {
+            //     console.log(body);
+            //     if (!error && response.statusCode == 200) {
+            //         reject(error)
+            //     } else {
+            //         reslove(body)
+            //     }
+            // });
+        }).catch(err => {
+            reject(err)
         });
     })
 }
@@ -139,5 +194,6 @@ module.exports = {
     db_BindOpenId,
     db_insertUser,
     db_insertBusiness,
-    db_updateBusState
+    db_updateBusState,
+    getBindInfo
 }

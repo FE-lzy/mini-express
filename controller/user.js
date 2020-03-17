@@ -3,17 +3,15 @@ const { genPassword } = require('../utils/cryp')
 var querystring = require('querystring');
 const { post_data, urlApi, postQueryParam } = require('../conf/ls')
 const jwt = require('jsonwebtoken');
-const login = (username, password) => {
-    username = escape(username)
-    // 生成加密的密码
-    password = escape(genPassword(password))
+const login = (data) => {
+    // username = escape(username)
+    // password = escape(password)
 
     const sql = `
-        select  * from pub_user where username=${username} and password=${password}
+        select  * from user where username='${data.username}' and password='${data.password}'
     `
-
     return exec(sql).then(rows => {
-        return rows[0] || {}
+        return rows
     })
 }
 const userInfo = (uId) => {
@@ -26,7 +24,7 @@ const userInfo = (uId) => {
         return rows[0]
     })
 }
-const getLsToken = data =>{
+const getLsToken = data => {
     let contens = querystring.stringify(post_data); // 转换json
     let url = urlApi + '/getToken?' + contens;
     // get请求获取token
@@ -42,7 +40,7 @@ const getLsToken = data =>{
     });
     return promise
 }
-const resetPwd = data =>{
+const resetPwd = data => {
     let password = escape(genPassword(data.password))
     let oldpwd = escape(genPassword(data.oldpwd))
     const sql = `
@@ -58,20 +56,20 @@ const setToken = function (username) {
     return new Promise((resolve, reject) => {
         const token = jwt.sign({
             username: username
-        }, signkey, { expiresIn:  60 * 60 * 24 * 3 });
+        }, signkey, { expiresIn: 60 * 60 * 24 * 3 });
 
-        console.log('token',token);
+        console.log('token', token);
         resolve(token);
     })
 }
 const verToken = function (token) {
     return new Promise((resolve, reject) => {
-        var info = jwt.verify(token, signkey ,(error, decoded) => {
+        var info = jwt.verify(token, signkey, (error, decoded) => {
             if (error) {
-              console.log(error.message)
-              return
+                console.log(error.message)
+                return
             }
-          });
+        });
         console.log(info);
         resolve(info);
     })
