@@ -1,12 +1,16 @@
 var express = require('express');
 var router = express.Router();
+const { exec } = require('../db/mysql');
 const { SuccessModel, ErrorModel } = require('../model/resModel')
-const { db_insertBusiness, db_insertUser, getWxOpenidByCode, getBindInfo, db_UserLoginByAccount, db_BindOpenId, db_UserLoginByOpenid } = require('../controller/wxapi')
+const { db_insertBusiness, db_selectBusiness, db_insertUser, getWxOpenidByCode, isRecerive, getBindInfo,
+    db_UserLoginByAccount, getRecCodeInfo, getActCodeInfo, updateOrderState, db_BindOpenId, db_UserLoginByOpenid, checkOrder, submitOrder, updateActCode }
+    = require('../controller/wxapi')
 const { upload, createFolder, uploadFolder } = require('../controller/common')
 const { baseUrl } = require('../conf/wx')
-const { func_updateRecord } = require('../controller/record')
-
-const { db_insertActAnti, db_insertReceiveAct, getActByReciveCode, getAntiByAct, db_deleteActAnti, db_deleteRecAct, getAntiRecord } = require('../controller/code')
+const { createUnifiedOrder } = require('../service/weixin')
+const { func_updateRecord, db_recordByReceive, updateRecordByReceive, selectRecordByReceive } = require('../controller/record')
+const { db_insertActAnti, db_insertReceiveAct, getActByReciveCode, getAntiByAct,
+    db_deleteActAnti, db_deleteRecAct, getAntiRecord } = require('../controller/code')
 /**
  * 获取当前二维码绑定信息
  * type 类型
@@ -53,7 +57,7 @@ router.post('/wxOpenid', function (req, res, next) {
 router.post('/wxUserLogin', function (req, res, next) {
     console.log(req.body);
     db_UserLoginByAccount(req.body).then(result => {
-        console.log(result);
+        console.log(result.length);
         if (result.length > 0) {
             db_BindOpenId(req.body).then(isUpdate => {
                 return res.json(new SuccessModel(result[0]))
@@ -63,7 +67,83 @@ router.post('/wxUserLogin', function (req, res, next) {
         }
     })
 });
+router.post('/checkOrder', function (req, res, next) {
+    checkOrder(req.body).then(data => {
+        if (data.length > 0) {
+            return res.json(new SuccessModel(data))
+        } else {
+            return res.json(new SuccessModel([]))
+        }
+    })
+})
+router.post('/updateOrder', function (req, res, next) {
+    updateOrderState(req.body).then(data => {
+        return res.json(new SuccessModel(data))
+    }).catch(err => {
+        return res.json(new ErrorModel(err))
+    })
+})
+/**
+ * 创建激活订单
+ */
+router.post('/submitOrder', function (req, res, next) {
+    submitOrder(req.body).then(data => {
+        console.log(data);
+        if (data) {
+            updateActCode(req.body).then(isUpdate => {
+                return res.json(new SuccessModel(data))
+            })
+        } else {
+            return res.json(new ErrorModel())
+        }
+    }).catch(err => {
+        return res.json(new ErrorModel(err))
+    })
+});
+router.post('/payfor', function (req, res, next) {
+    let orderInfo = req.body;
+    try {
+        createUnifiedOrder({
+            openid: orderInfo.openid,
+            body: '订单编号：' + orderInfo.orderSn,
+            out_trade_no: orderInfo.orderSn,
+            total_fee: parseInt(orderInfo.price * 100),
+            spbill_create_ip: ''
+        }).then(returnParams => {
+            console.log(returnParams);
+            return res.json(new SuccessModel(returnParams))
+        }).catch(err => {
+            return res.json(new ErrorModel(err))
+        })
+    } catch (err) {
+        return res.json(new ErrorModel(`微信支付失败 ${err.err_code_des || err.return_msg}`))
+    }
 
+});
+router.post('/getActInfo', function (req, res, next) {
+    let sql = `select price,sn,state,activeTime from actcode where sn = '${req.body.sn}'`
+    exec(sql).then(data => {
+        console.log(data);
+        if (data.length > 0) {
+            getActCodeInfo({ sn: req.body.sn }).then(result => {
+                console.log(data[0].price);
+                let returnParams = {
+                    anti: result,
+                    price: data[0].price,
+                    state: data[0].state,
+                    activeTime: data[0].activeTime
+                }
+                console.log(returnParams);
+                return res.json(new SuccessModel(returnParams))
+            })
+        } else {
+            return res.json(new ErrorModel('不存在'))
+        }
+
+    }).catch(err => {
+        return res.json(new ErrorModel(err))
+    })
+});
 /**
  * 判断用户是否已经登录，根据openid匹配用户并返回基本信息
  * @param {openid} param 
@@ -77,6 +157,45 @@ router.post('/wxUserLoginByOpenid', function (req, res, next) {
             return res.json(new ErrorModel(result))
         }
     })
+})
+router.post('/getRecCodeInfo', function (req, res, next) {
+    isRecerive(req.body).then(result => {
+        if (result.length > 0) {
+            getRecCodeInfo(req.body).then(data => {
+                data = Object.assign({ receiveTime: result[0].receiveTime, state: result[0].state }, { data })
+                return res.json(new SuccessModel(data))
+            })
+
+        } else {
+            return res.json(new ErrorModel('不存在次二维码'))
+        }
+    }).catch(err => {
+        return res.json(new ErrorModel('出错'))
+    })
+});
+/**
+ * 接收码确认接收
+ */
+router.post('/receiveSn', async (req, res, next) => {
+    if (!req.body || !req.body.sn) {
+
+    }
+    let isRec = await selectRecordByReceive(req.body);
+    console.log(isRec);
+    if (isRec.state == 1) {
+        return res.json(new ErrorModel('已激活'))
+    }
+    let insertId = await db_recordByReceive(req.body);
+    if (insertId) {
+        let update = await updateRecordByReceive(req.body);
+        if (update) {
+            return res.json(new SuccessModel())
+        } else {
+            return res.json(new ErrorModel('接收失败'))
+        }
+    } else {
+        return res.json(new ErrorModel(err))
+    }
 })
 router.post('/updateRecRecord', function (req, res, next) {
     let recCode = '320201000000001';
@@ -120,28 +239,42 @@ router.post('/uploadImg', upload.array('file', 9), function (req, res, next) {
     }
     return res.json(new SuccessModel(fileName))
 });
+router.post('/businessStatus', async (req, res, next)=> {
+    let register = await db_selectBusiness(req.body)
+    return res.json(new SuccessModel(register))
+})
 /**
  * 申请成为商户
  */
-router.post('/wxApplyforPos', function (req, res, next) {
+router.post('/wxApplyforPos', async (req, res, next) => {
+    let register = await db_selectBusiness(req.body)
+    console.log(register);
+    if (register) {
+        // if (register.status == 0) {
+        //     return res.json(new ErrorModel('已申请，请勿重复申请'))
+        // }
+        return res.json(new ErrorModel('已申请，请勿重复申请'))
+    }
     console.log(req.body);
-    db_insertUser(req.body).then(insertState => {
-        console.log(insertState);
-        if (insertState.insertId) {
-            req.body.userId = insertState.insertId
-            db_insertBusiness(req.body).then(data => {
-                console.log(data);
-                if (data.insertId) {
-                    return res.json(new SuccessModel(data))
-                }
+    let param = {
+        username: req.body.phone,
+        password: req.body.phone.substring(5),
+        role: 5,
+        status: 0
+    }
+    let insertId = await db_insertUser(param)
+    if (insertId) {
+        let param = Object.assign({ userId: insertId }, req.body)
+        db_insertBusiness(param).then(data => {
+            console.log(data);
+            if (data.insertId) {
+                return res.json(new SuccessModel(data))
+            }
+        }).catch(err => {
+            return res.json(new ErrorModel(err))
+        })
+    }
 
-            }).catch(err => {
-                return res.json(new ErrorModel(err))
-            })
-        }
-    }).catch(err => {
-        return res.json(new ErrorModel(err))
-    })
 })
 /**
  * 管理员扫码激活码绑定防伪码

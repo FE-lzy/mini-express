@@ -5,13 +5,11 @@ var fs = require('fs');
 var logger = require('morgan');
 var ejs = require('ejs');
 var indexRouter = require('./routes/index');
-var billRouter = require('./routes/bill');
-var userRouter = require('./routes/user')
-var manRouter = require('./routes/manager')
-var scanRouter = require('./routes/scan')
+// var userRouter = require('./routes/user')
 var webRouter = require('./routes/web')
 var wxRouter = require('./routes/wx')
-
+var batchRouter = require('./routes/client/web')
+var society = require('./routes/weixin/society')
 const expressJwt = require('express-jwt');
 var vertoken = require('./controller/user.js');
 var app = express();
@@ -79,12 +77,14 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
-app.use('/user', userRouter);
-app.use('/bill', billRouter);
-app.use('/manager', manRouter);
-app.use('/scan', scanRouter);
+// app.use('/user', userRouter);
+// app.use('/bill', billRouter);
+// app.use('/manager', manRouter);
+// app.use('/scan', scanRouter);
 app.use('/web', webRouter);
 app.use('/wx', wxRouter);
+app.use('/batch', batchRouter);
+app.use('/society', society);
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
   next(createError(404));

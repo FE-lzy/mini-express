@@ -98,33 +98,15 @@ router.post('/login', function (req, res, next) {
     })
 })
 
-
-router.get('/test', function (req, res, next) {
-
-    // getWxacode('123').then(result =>{
-    //     return res.json(
-    //         result
-    //     )
-    // })getAccessToken()
-    getAccessToken().then(result => {
-        console.log(result);
-        return res.json(result)
-    })
-    // return res.json(
-    //     getAccessToken()   
-    // )
-    // let date = getYearMonth();
-    // let num = transformStrNumber(createRandom(false,8));
-    // let randomNum = createRandom(false,8);
-    // let total = getCodeCheckNum(num)
-    // console.log(createCipherText('abcdefgf', '12234'));
-    // console.log(createCode('actCode'));
-    // getLastSn('actCode').then(result => {
-    //     console.log(result);
-    //     return res.json(result);
-    // })
-    // createAntiCode(1);
-    // console.log(code);
+async function createCodes(param) {
+    let r_id = await db_insertBatch(param);
+    console.log(r_id);
+    return r_id
+}
+router.post('/test', function (req, res, next) {
+    let id = createCodes(req.body);
+    console.log(id);
+    return res.json(new SuccessModel(id))
 })
 /**
  * 创建激活码
@@ -228,21 +210,33 @@ router.post('/getAntiList', function (req, res, next) {
     })
 });
 
-router.get('/createQrCode', function (req, res, next) {
-    getWxacode('123').then(originBuffer => {
-        console.log(dataBuffer);
-        var base64Img = originBuffer.toString('base64'); // base64图片编码字符串
-        var dataBuffer = new Buffer(base64Img, 'base64');
+router.post('/createQrCode', function (req, res, next) {
+    let sn = req.body.sn; //获取sn
+    let type = req.body.type; //获取type
+    console.log(sn + type);
+    getWxacode(sn + type).then(originBuffer => {
+        console.log(originBuffer);
+        //生成二维码图片名称
+        var imgname = './static/imgs/' + sn + '.jpg'
+        fs.exists(imgname, function (exists) {
+            if (!exists) {
+                // var base64Img = originBuffer.toString('base64'); // base64图片编码字符串
+                var dataBuffer = new Buffer(originBuffer, 'base64');
 
-        //保存到本地
-        fs.writeFile('./static/2.jpg', dataBuffer, function (err) {
-            if (err) {
-                return res.json(new ErrorModel(err))
+                //保存到本地
+                fs.writeFile(imgname, dataBuffer, function (err) {
+                    if (err) {
+                        return res.json(new ErrorModel(err))
+                    } else {
+                        console.log("保存成功！");
+                        return res.json(new SuccessModel(imgname))
+                    }
+                });
             } else {
-                console.log("保存成功！");
-                return res.json(new SuccessModel())
+                return res.json(new ErrorModel('已存在'))
             }
-        });
+        })
+
     }).catch(err => {
         return res.json(new ErrorModel(err))
     })

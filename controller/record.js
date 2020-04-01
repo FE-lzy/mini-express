@@ -75,10 +75,41 @@ const updateRecordByBatch = (param) => {
         return rows || {}
     })
 }
+const selectRecordByReceive = (param) => {
+    let sql = `select state from receivecode where sn = '${param.sn}'`;
+    return exec(sql).then(rows => {
+        return rows[0] || {}
+    })
+}
+/**
+ * 添加接收二维码的记录
+ */
+const db_recordByReceive = (param) => {
+    let time = new Date().toLocaleString();
+    let sql = `insert into receive_record (receiveSn,state,userId,createTime) value 
+    ('${param.sn}',7,'${param.userId}','${time}')`
+    return exec(sql).then(rows => {
+        return rows || {}
+    })
+}
+
+const updateRecordByReceive = (param) => {
+    let time = new Date().toLocaleString();
+    let sql = `update receivecode set receiveTime = '${time}',state=1 where sn = '${param.sn}'`
+    return exec(sql).then(rows => {
+        return rows || {}
+    })
+}
+const updateRecordByActCode = (param) =>{
+    
+}
 module.exports = {
     db_insertRecord,
     updateAntiState,
     func_updateRecord,
     db_insertRecordByBatch,
-    updateRecordByBatch
+    updateRecordByBatch,
+    db_recordByReceive,
+    updateRecordByReceive,
+    selectRecordByReceive
 }

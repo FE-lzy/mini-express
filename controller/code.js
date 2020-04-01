@@ -17,6 +17,7 @@ const createAntiCode = (type) => {
         checkCode;
 }
 /**
+ * 保留
  * 存储激活码
  * @param {*} param 
  */
@@ -54,6 +55,7 @@ const db_selectbatch = (param) => {
     })
 }
 /**
+ * 保留
  * 创建防伪码
  * @param {} param 
  */
@@ -101,6 +103,7 @@ const db_insertActAnti = (param) => {
     })
 }
 /**
+ * 保留
  * 创建接收码
  * @param {receivesn} param 
  */
@@ -209,6 +212,7 @@ const getLastSn = (dbname) => {
         return rows[0] || {}
     })
 }
+
 /**
  * 根据接收码获取激活码
  * @param {*} recCode 
@@ -230,6 +234,7 @@ const getAntiByAct = (actCode) => {
     })
 }
 /**
+ * 保留
  * 生成密文
  * @param {*} salt 
  * @param {*} number 
@@ -270,5 +275,6 @@ module.exports = {
     db_selectbatch,
     db_deleteActAnti,
     db_deleteRecAct,
-    getAntiRecord
+    getAntiRecord,
+    
 }

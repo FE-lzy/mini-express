@@ -16,18 +16,18 @@ con.connect();
 
 // 定义统一的sql函数
 function exec(sql) {
-    console.log('请求：',sql);
+    console.log('请求：', sql);
     // 一个promise异步请求,返回一个异步函数
     const promise = new Promise((resolve, reject) => {
-        con.query(sql,(err,result) =>{
-            if(err){
+        con.query(sql, (err, result) => {
+            if (err) {
                 reject(err)
                 return
             }
             resolve(result)
         })
     })
-    
+
     return promise
 }
 

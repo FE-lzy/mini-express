@@ -8,9 +8,9 @@ if (env === 'dev') {
     MYSQL_CONF = {
         host: 'localhost',
         user: 'root',
-        password: '12345678',
+        password: '123456',
         port: '3306',
-        database: 'bill'
+        database: 'miniprogram_trace'
     }
 }
 
@@ -19,9 +19,9 @@ if (env === 'production') {
     MYSQL_CONF = {
         host: 'localhost',
         user: 'root',
-        password: '12345678',
+        password: '123456',
         port: '3306',
-        database: 'bill'
+        database: 'miniprogram_trace'
     }
 }
 

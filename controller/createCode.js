@@ -1,6 +1,13 @@
-const { db_insertBatch, createAntiCode, getLastSn, createCipherText, db_insertReceive, createCodeBy, createCode, db_AntiTotal, db_insertActAnti, db_insertActCode, db_selectAntiList, db_insertAntiCode } = require('../controller/code')
-const { getYearMonth, transformStrNumber, createRandom, createRandomNumber, getCodeCheckNum } = require('../utils/cryp')
+const { getLastSn,
+    createCipherText,
+    db_insertReceive,
+    db_insertActCode,
+    db_insertAntiCode }
+    = require('../controller/code')
+const { createRandom,
+        createRandomNumber } = require('../utils/cryp')
 
+        
 //循环创建激活码
 var lastActSn = '';
 var index_act = 0

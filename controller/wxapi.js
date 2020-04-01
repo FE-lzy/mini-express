@@ -3,7 +3,10 @@ var fs = require('fs');
 var request = require('request')
 const superagent = require('superagent');
 const { exec } = require('../db/mysql')
+const { generateOrderNumber } = require('../utils/code')
 const time = new Date().toLocaleString();
+
+var qiaoExtWeixin = require('qiao.ext.weixin');
 /**
  * 获取绑定关系
  * @param {type,sn} param 
@@ -20,8 +23,40 @@ const getBindInfo = (param) => {
         return rows
     })
 }
+const checkOrder = (param) => {
+    let sql = `select * from orders where actSn = '${param.sn}'`;
+    return exec(sql).then(data => {
+        return data
+    })
+}
+const submitOrder = (param) => {
+    const time = new Date().toLocaleString();
+    let orderSn = generateOrderNumber();
+    let insert_sql = `insert into orders (actSn,orderSn,userId,price,create_time) values 
+            ('${param.sn}','${orderSn}',${param.userId},${param.price},'${time}')`
+    return exec(insert_sql).then(data => {
+        return orderSn
+    })
+}
+const updateOrderState = (param) => {
+    let sql = `update receive_record set state = 1 where orderSn = '${param.orderSn}'`
+    return exec(sql).then(rows => {
+        return rows || {}
+    })
+}
 
-
+/**
+ * 保留
+ * 修改激活表的激活状态
+ * @param {*} param 
+ */
+const updateActCode = (param) => {
+    const time = new Date().toLocaleString();
+    let sql = `update actcode set userId = ${param.userId} , activeTime = '${time}',state = 1 where sn = '${param.sn}'`;
+    return exec(sql).then(rows => {
+        return rows
+    })
+}
 
 /**
  * 根据code获取openid
@@ -62,6 +97,22 @@ const db_BindOpenId = (param) => {
         return rows
     })
 }
+const db_selectBusiness = (param) => {
+    console.log(param);
+    let sql = `select * from business where `
+    if (param.shopname) {
+        sql += `shopname = '${param.shopname}' or `
+    }
+    if (param.phone) {
+        sql += `phone = '${param.phone}' or `
+    }
+    if (param.userId) {
+        sql += `userId = '${param.userId}' `
+    }
+    return exec(sql).then(rows => {
+        return rows[0] || null
+    })
+}
 /**
  * 插入商户信息
  * @param {*} param 
@@ -72,10 +123,14 @@ const db_insertBusiness = (param) => {
     const time = new Date().toLocaleString();
     //先插入商户表，在插入用户表
     let sql = `insert into business 
-            (userId,legal,busLicence,storePicture,introduce,phone,createTime) 
-            values (${param.userId},'${param.legal}','${param.busLicence}',
-            '${param.storePicture}',
-            '${param.introduce}','${param.phone}','${time}')`
+            (userId,username,shopname,phone,tel,introduce,
+                province,city,district,region,
+                licenseImg,shopImg,goodImg,otherImg,createTime) 
+            values (${param.userId},'${param.username}','${param.shopname}',
+            '${param.phone}','${param.tel}','${param.introduce}',
+            '${param.province}','${param.city}','${param.district}','${param.region}',
+            '${param.licenseImg}','${param.shopImg}','${param.goodImg}',
+            '${param.otherImg}','${time}')`
     return exec(sql).then(rows => {
         return rows
     })
@@ -86,10 +141,10 @@ const db_insertBusiness = (param) => {
  */
 const db_insertUser = (param) => {
     const time = new Date().toLocaleString();
-    let sql = `insert into user (username,password,role,createTime) values 
-        ('${param.username}','${param.password}',${param.role},'${time}') `
+    let sql = `insert into user (username,password,role,status,createTime) values 
+        ('${param.username}','${param.password}',${param.role},${param.status},'${time}') `
     return exec(sql).then(rows => {
-        return rows
+        return rows.insertId || ''
     })
 }
 const db_updateBusState = (param) => {
@@ -136,55 +191,67 @@ const getAccessToken = () => {
     })
 
 }
+const getCodeStrweam = async function (accessToken, scene) {
+    var src2 = await qiaoExtWeixin.mpCodeSrc(2, accessToken,
+        { page: '/pages/personal/login/login', scene: scene },
+        'jpg');
+    console.log('src2 ', src2);
+    var base64Data = src2.replace(/^data:image\/\w+;base64,/, "");
+    // var dataBuffer = new Buffer(base64Data, 'base64');
+    //保存到本地
+    return base64Data;
+}
 
 const getWxacode = (scene) => {
     //请求参数
     return new Promise(function (reslove, reject) {
         getAccessToken().then(token => {
             console.log('token', token);
-            let url = getUniCodeUrl + '?access_token=' + token;
-            let param = { scene: '1234567897877dsfjskdfh' }
-            superagent.post(url).send(JSON.stringify(param)).timeout(50000).end((err, result) => {
-                console.log(err);
-                if (err) {
-                    reject(err);
-                } else {
-                    reslove(result.body)
-                }
-            })
-
-            // superagent.post('/api/pet')
-            //     .send({ scene: 'Manny' })
-            //     .set('Accept', 'application/json')
-            //     .then(res => {
-            //         alert('yay got ' + JSON.stringify(res.body));
-            //     });
-            // superagent.post(url)
-            //     .set('Content-Type', 'application/json')
-            //     .send(JSON.stringify(param))
-            //     .then(res => {
-            //         console.log('sssss ', res);
-            //         reslove(res)
-            //     })
-
-            // request({
-            //     url: url,
-            //     method: "POST",
-            //     body: JSON.stringify(param)
-            // }, function (error, response, body) {
-            //     console.log(body);
-            //     if (!error && response.statusCode == 200) {
-            //         reject(error)
-            //     } else {
-            //         reslove(body)
-            //     }
-            // });
+            reslove(getCodeStrweam(token, scene));
         }).catch(err => {
             reject(err)
         });
     })
 }
+const isRecerive = (param) => {
 
+    let sql = `
+    select * from receivecode where sn = '${param.sn}'
+    `;
+    return exec(sql).then(rows => {
+        return rows
+    })
+}
+const getRecCodeInfo = (param) => {
+    let sql = `
+    select type,count(*) num from anticode where sn in 
+    (select antiSn from act_anti where actSn in (select actSn from receive_act where receiveSn = '${param.sn}'))
+     GROUP BY type`;
+    return exec(sql).then(rows => {
+        return rows
+    })
+}
+const getActCodeInfo = (param) => {
+    let sql = `
+    select type,count(*) num from anticode where sn in 
+    (select antiSn from act_anti where actSn  = '${param.sn}')
+     GROUP BY type`;
+    return exec(sql).then(rows => {
+        return rows
+    })
+}
+/**
+* 确认接收
+* @param {*} sn 
+*/
+const receiveSn = (sn) => {
+
+    const time = new Date().toLocaleString();
+    let sql = `update receivecode set receivedTime = '${time}' where sn = ${sn}`
+    return exec(sql).then(rows => {
+        return rows
+    })
+}
 module.exports = {
     getAccessToken,
     getWxacode,
@@ -195,5 +262,14 @@ module.exports = {
     db_insertUser,
     db_insertBusiness,
     db_updateBusState,
-    getBindInfo
+    getBindInfo,
+    getRecCodeInfo,
+    isRecerive,
+    receiveSn,
+    submitOrder,
+    updateActCode,
+    checkOrder,
+    getActCodeInfo,
+    updateOrderState,
+    db_selectBusiness
 }
