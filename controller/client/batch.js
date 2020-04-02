@@ -1,5 +1,7 @@
 
-const { db_batch_add } = require('../db/batch')
+const { db_batch_add, db_anti_info,
+    db_act_info,
+    db_rec_info } = require('../db/batch')
 const { createAnti, createAct, createRec } = require('../createCode')
 /**
  * 创建-批次batch
@@ -25,7 +27,18 @@ async function batch_add(param) {
         return e;
     }
 }
-
+async function batch_info(param) {
+    try {
+        let antidata = await db_anti_info(param);
+        let actdata = await db_act_info(param);
+        let recdata = await db_act_info(param);
+        let data = { antidata, actdata, recdata }
+        return data;
+    } catch (e) {
+        return e;
+    }
+}
 module.exports = {
-    batch_add
+    batch_add,
+    batch_info
 }

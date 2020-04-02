@@ -2,7 +2,7 @@ var express = require('express');
 var router = express.Router();
 const { SuccessModel, ErrorModel } = require('../../model/resModel')
 
-const { batch_add } = require('../../controller/api/batch')
+const { batch_add } = require('../../controller/client/batch')
 
 router.post('/createBatch', async (req, res, next) => {
     let insertId = await batch_add(req.body);
@@ -12,4 +12,5 @@ router.post('/createBatch', async (req, res, next) => {
 router.post('/batchList', function (req, res, next) {
     
 })
+
 module.exports = router

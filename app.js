@@ -5,13 +5,13 @@ var fs = require('fs');
 var logger = require('morgan');
 var ejs = require('ejs');
 var indexRouter = require('./routes/index');
-// var userRouter = require('./routes/user')
 var webRouter = require('./routes/web')
 var wxRouter = require('./routes/wx')
 var batchRouter = require('./routes/client/web')
 var society = require('./routes/weixin/society')
+var client = require('./routes/client/client')
 const expressJwt = require('express-jwt');
-var vertoken = require('./controller/user.js');
+var vertoken = require('./controller/client/user.js');
 var app = express();
 app.all("*", function (req, res, next) {
   //设置允许跨域的域名，*代表允许任意域名跨域
@@ -51,37 +51,34 @@ app.get('/upload/*', function (req, res) {
 })
 var signkey = 'mes_qdhd_mobile_xhykjyxgs';
 // 解析token获取用户信息
-// app.use(function (req, res, next) {
-//   var token = req.headers['authorization'];
-//   if (token == undefined) {
-//     return next();
-//   } else {
-//     vertoken.verToken(token).then((data) => {
-//       req.data = data;
-//       return next();
-//     }).catch((error) => {
-//       console.log(error);
-//       return next();
-//     })
-//   }
-// });
+app.use(function (req, res, next) {
+  var token = req.headers['authorization'];
+  if (token == undefined) {
+    return next();
+  } else {
+    vertoken.verToken(token).then((data) => {
+      req.data = data;
+      return next();
+    }).catch((error) => {
+      console.log(error);
+      return next();
+    })
+  }
+});
 
 //验证token是否过期并规定哪些路由不用验证
-// app.use(expressJwt({
-//   secret: 'mes_qdhd_mobile_xhykjyxgs'
-// }).unless({
-//   path: ['/', '/user/login', '/scan/upload', '/favicon.ico']//除了这个地址，其他的URL都需要验证
-// }));
+app.use(expressJwt({
+  secret: 'mes_qdhd_mobile_xhykjyxgs'
+}).unless({
+  path: [/^\/wx\.*/,/^\/society\.*/,'/client/login','/']//除了这个地址，其他的URL都需要验证
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
-// app.use('/user', userRouter);
-// app.use('/bill', billRouter);
-// app.use('/manager', manRouter);
-// app.use('/scan', scanRouter);
 app.use('/web', webRouter);
+app.use('/client', client);
 app.use('/wx', wxRouter);
 app.use('/batch', batchRouter);
 app.use('/society', society);
@@ -91,19 +88,20 @@ app.use(function (req, res, next) {
 });
 
 // error handler
-// app.use(function (err, req, res, next) {
-//   console.log(err);
-//   if (err.name === 'UnauthorizedError') {
-//     console.error(req.path + ',无效token');
-//     res.json({
-//       message: 'token过期，请重新登录',
-//       code: 400
-//     })
-//     return
-//   }
-//   // render the error page
-//   res.status(err.status || 500);
-//   res.render('error');
-// });
+app.use(function (err, req, res, next) {
+  // console.log(req.path );
+  console.log(err);
+  if (err.name === 'UnauthorizedError') {
+    console.error(req.path + ',无效token');
+    res.json({
+      message: 'token过期，请重新登录',
+      code: 400
+    })
+    return
+  }
+  // render the error page
+  res.status(err.status || 500);
+  res.render('error');
+});
 
 module.exports = app;

@@ -11,7 +11,7 @@ const { SuccessModel, ErrorModel } = require('../model/resModel')
 const { createAct, createRec, createAnti } = require('../controller/createCode')
 const { getAccessToken, getWxacode, db_updateBusState } = require('../controller/wxapi')
 var fs = require('fs');
-const { login } = require('../controller/user')
+const { login } = require('../controller/client/user')
 
 /**
  * 创建批次

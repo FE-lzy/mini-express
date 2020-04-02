@@ -26,9 +26,23 @@ const updateverify = (param) => {
         return rows || null;
     })
 }
+const getbusInfo = (param) => {
+    let sql = `select * from business where id= ${param.id}`
+    return exec(sql).then(rows => {
+        return rows[0] || null;
+    })
+}
+const updateBus = (param) => {
+    let sql = `update business set status = ${param.status} where id= ${param.id}`
+    return exec(sql).then(rows => {
+        return rows[0] || null;
+    })
+}
 module.exports = {
     getInfo,
     updateInfo,
     getverify,
-    updateverify
+    updateverify,
+    getbusInfo,
+    updateBus
 }
