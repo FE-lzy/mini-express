@@ -3,7 +3,7 @@ var router = express.Router();
 const { exec } = require('../db/mysql');
 const { SuccessModel, ErrorModel } = require('../model/resModel')
 const { db_insertBusiness, db_selectBusiness, db_insertUser, getWxOpenidByCode, isRecerive, getBindInfo,
-    db_UserLoginByAccount, getRecCodeInfo, getActCodeInfo, updateOrderState, db_BindOpenId, db_UserLoginByOpenid, checkOrder, submitOrder, updateActCode }
+    db_UserLoginByAccount, updateActPrice, getRecCodeInfo, getActCodeInfo, updateOrderState, db_BindOpenId, db_UserLoginByOpenid, checkOrder, submitOrder, updateActCode }
     = require('../controller/wxapi')
 const { upload, createFolder, uploadFolder } = require('../controller/common')
 const { baseUrl } = require('../conf/wx')
@@ -239,7 +239,7 @@ router.post('/uploadImg', upload.array('file', 9), function (req, res, next) {
     }
     return res.json(new SuccessModel(fileName))
 });
-router.post('/businessStatus', async (req, res, next)=> {
+router.post('/businessStatus', async (req, res, next) => {
     let register = await db_selectBusiness(req.body)
     return res.json(new SuccessModel(register))
 })
@@ -281,12 +281,14 @@ router.post('/wxApplyforPos', async (req, res, next) => {
  * @param {actSn} 激活码sn 
  * @param {antis} 防伪码起始
  */
-router.post('/bindActAnti', function (req, res, next) {
+router.post('/bindActAnti', async (req, res, next) => {
     let antis = req.body.selects;
     let param = {}
+    param.price = 0.01; //暂时定价格为0.01元，便于演示
     param.actSn = req.body.actSn.trim();
-    db_deleteActAnti(req.body.actSn).then(isdelete => {
-        console.log(isdelete);
+    let isdelete = await db_deleteActAnti(req.body.actSn);
+    let update = await updateActPrice({ price: 0.01, sn: param.actSn })
+    if (isdelete) {
         for (let j = 0; j < antis.length; j++) {
             console.log(antis[j]);
             for (let i = antis[j].start; i <= antis[j].end; i++) {
@@ -300,7 +302,7 @@ router.post('/bindActAnti', function (req, res, next) {
                 })
             }
         }
-    })
+    }
 })
 /**
  * 绑定接收码和激活码

@@ -44,7 +44,13 @@ const updateOrderState = (param) => {
         return rows || {}
     })
 }
-
+const updateActPrice = (param) => {
+    const time = new Date().toLocaleString();
+    let sql = `update actcode set price = ${param.price} where sn = '${param.sn}'`;
+    return exec(sql).then(rows => {
+        return rows
+    })
+}
 /**
  * 保留
  * 修改激活表的激活状态
@@ -99,15 +105,11 @@ const db_BindOpenId = (param) => {
 }
 const db_selectBusiness = (param) => {
     console.log(param);
-    let sql = `select * from business where `
-    if (param.shopname) {
-        sql += `shopname = '${param.shopname}' or `
-    }
-    if (param.phone) {
-        sql += `phone = '${param.phone}' or `
-    }
-    if (param.userId) {
-        sql += `userId = '${param.userId}' `
+    let sql = `select * from business `
+    if (param.shopname && param.phone) {
+        sql += `where  shopname = '${param.shopname}' or phone = '${param.phone}'`
+    } else {
+        sql += `where  userId = '${param.userId}' `
     }
     return exec(sql).then(rows => {
         return rows[0] || null
@@ -193,7 +195,7 @@ const getAccessToken = () => {
 }
 const getCodeStrweam = async function (accessToken, scene) {
     var src2 = await qiaoExtWeixin.mpCodeSrc(2, accessToken,
-        { page: '/pages/personal/login/login', scene: scene },
+        { scene: "sn=" + scene.sn + "&type=" + scene.type },
         'jpg');
     console.log('src2 ', src2);
     var base64Data = src2.replace(/^data:image\/\w+;base64,/, "");
@@ -202,8 +204,9 @@ const getCodeStrweam = async function (accessToken, scene) {
     return base64Data;
 }
 
-const getWxacode = (scene) => {
+const getWxacode = (sn, type) => {
     //请求参数
+    let scene = { sn, type }
     return new Promise(function (reslove, reject) {
         getAccessToken().then(token => {
             console.log('token', token);
@@ -268,6 +271,7 @@ module.exports = {
     receiveSn,
     submitOrder,
     updateActCode,
+    updateActPrice,
     checkOrder,
     getActCodeInfo,
     updateOrderState,

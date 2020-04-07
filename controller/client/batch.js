@@ -31,7 +31,7 @@ async function batch_info(param) {
     try {
         let antidata = await db_anti_info(param);
         let actdata = await db_act_info(param);
-        let recdata = await db_act_info(param);
+        let recdata = await db_rec_info(param);
         let data = { antidata, actdata, recdata }
         return data;
     } catch (e) {

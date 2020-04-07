@@ -145,7 +145,7 @@ const db_deleteRecAct = (param) => {
 }
 const getAntiRecord = (param) => {
     let sql = `
-    select * from batch_record,state,user where batchId =  
+    select user.username,state.name, batch_record.createTime from batch_record,state,user where batchId =  
     (select batchId from anticode where sn = '${param}') and batch_record.state = state.code and batch_record.userId = user.id`
     console.log(sql);
     return exec(sql).then(rows => {
@@ -276,5 +276,5 @@ module.exports = {
     db_deleteActAnti,
     db_deleteRecAct,
     getAntiRecord,
-    
+
 }

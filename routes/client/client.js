@@ -14,6 +14,8 @@ router.post('/login', async (req, res, next) => {
             let data = { token: token, userInfo: user }
             return res.json(new SuccessModel(data))
         }
+    } else {
+        return res.json(new ErrorModel('用户不存在'))
     }
 });
 

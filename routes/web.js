@@ -214,7 +214,8 @@ router.post('/createQrCode', function (req, res, next) {
     let sn = req.body.sn; //获取sn
     let type = req.body.type; //获取type
     console.log(sn + type);
-    getWxacode(sn + type).then(originBuffer => {
+
+    getWxacode(sn, type).then(originBuffer => {
         console.log(originBuffer);
         //生成二维码图片名称
         var imgname = './static/imgs/' + sn + '.jpg'
@@ -232,8 +233,9 @@ router.post('/createQrCode', function (req, res, next) {
                         return res.json(new SuccessModel(imgname))
                     }
                 });
+
             } else {
-                return res.json(new ErrorModel('已存在'))
+                return res.json(new ErrorModel(imgname))
             }
         })
 
@@ -241,7 +243,14 @@ router.post('/createQrCode', function (req, res, next) {
         return res.json(new ErrorModel(err))
     })
 })
+router.post('/baseImg', async (req, res, next) => {
+    let sn = req.body.sn; //获取sn
+    let type = req.body.type; //获取type
+    console.log(sn + type);
 
+    let buffer = await getWxacode(sn, type)
+    return res.json(new SuccessModel({ baseImg: buffer, name: sn }))
+});
 router.get('/createImg', function (req, res, next) {
     fs.readFile('./static/1.jpg', function (err, originBuffer) {
         console.log(Buffer.isBuffer(originBuffer));

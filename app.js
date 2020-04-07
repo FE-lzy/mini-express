@@ -70,12 +70,12 @@ app.use(function (req, res, next) {
 app.use(expressJwt({
   secret: 'mes_qdhd_mobile_xhykjyxgs'
 }).unless({
-  path: [/^\/wx\.*/,/^\/society\.*/,'/client/login','/']//除了这个地址，其他的URL都需要验证
+  path: [/^\/wx\.*/,/^\/society\.*/,/^\/static\.*/,'/client/login','/','/favicon.ico']//除了这个地址，其他的URL都需要验证
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
-
+app.use('/static/imgs',express.static('./static/imgs'));
 app.use('/', indexRouter);
 app.use('/web', webRouter);
 app.use('/client', client);
